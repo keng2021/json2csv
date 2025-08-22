@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to CSV Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+
+        .upload-section.dragover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+            transform: scale(1.02);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .textarea-container {
+            margin-top: 20px;
+        }
+
+        .json-textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .json-textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .output-section {
+            margin-top: 30px;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .output-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .record-count {
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .table-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .preview-table th {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .preview-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+
+        .preview-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .format-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .format-selector label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .format-selector select {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .output-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>JSON to CSV Converter</h1>
+            <p>Convert complex JSON data to CSV format with preview and download</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose JSON File
+                </button>
+                <input type="file" id="fileInput" class="file-input" accept=".json" />
+                <p>Or drag and drop a JSON file here</p>
+                
+                <div class="textarea-container">
+                    <p style="margin-bottom: 10px;">Or paste your JSON data:</p>
+                    <textarea 
+                        id="jsonTextarea" 
+                        class="json-textarea" 
+                        placeholder="Paste your JSON data here..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <div class="format-selector">
+                <label for="inputFormat">Input Format:</label>
+                <select id="inputFormat">
+                    <option value="auto">Auto-detect</option>
+                    <option value="single">Single JSON Object</option>
+                    <option value="ndjson">Line-delimited JSON (NDJSON)</option>
+                    <option value="multiple">Multiple JSON Objects</option>
+                </select>
+            </div>
+
+            <div class="format-selector">
+                <label for="outputFormat">Output Format:</label>
+                <select id="outputFormat">
+                    <option value="flattened">Flattened Structure</option>
+                    <option value="campaigns">Campaigns Only</option>
+                    <option value="adgroups">Ad Groups Only</option>
+                    <option value="ads">Ads Only</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="convertBtn" onclick="convertToCSV()">
+                    Convert to CSV
+                </button>
+                <button class="btn btn-secondary" onclick="fixJSON()">
+                    Fix JSON
+                </button>
+                <button class="btn btn-success" id="downloadBtn" onclick="downloadCSV()" disabled>
+                    Download CSV
+                </button>
+                <button class="btn btn-secondary" onclick="clearData()">
+                    Clear All
+                </button>
+            </div>
+
+            <div id="errorMessage"></div>
+            <div id="successMessage"></div>
+            
+            <div id="statsSection" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="campaignCount">0</div>
+                        <div class="stat-label">Campaigns</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="adGroupCount">0</div>
+                        <div class="stat-label">Ad Groups</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="adCount">0</div>
+                        <div class="stat-label">Ads</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="rowCount">0</div>
+                        <div class="stat-label">CSV Rows</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-section" id="outputSection" style="display: none;">
+                <div class="output-header">
+                    <h3 class="output-title">CSV Preview</h3>
+                    <div class="record-count" id="recordCount">0 records</div>
+                </div>
+                <div class="table-container">
+                    <table class="preview-table" id="previewTable">
+                        <thead id="tableHeader"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let csvData = '';
+        let jsonData = null;
+
+        function fixCommonJSONIssues(jsonText) {
+            // Check if this is NDJSON (newline-delimited JSON) or multiple JSON objects
+            const lines = jsonText.trim().split('\n');
+            
+            // Try to detect NDJSON format
+            if (lines.length > 1) {
+                const validJSONLines = [];
+                let hasValidLines = false;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        try {
+                            JSON.parse(line);
+                            validJSONLines.push(line);
+                            hasValidLines = true;
+                        } catch (e) {
+                            // Skip invalid lines
+                        }
+                    }
+                }
+                
+                if (hasValidLines && validJSONLines.length > 1) {
+                    showMessage(`Detected ${validJSONLines.length} separate JSON objects. Converting to array format...`, 'success');
+                    return '[' + validJSONLines.join(',') + ']';
+                }
+            }
+            
+            // Try to detect multiple JSON objects concatenated together
+            const objects = [];
+            let currentPos = 0;
+            let braceCount = 0;
+            let start = 0;
+            let inString = false;
+            let escaped = false;
+            
+            for (let i = 0; i < jsonText.length; i++) {
+                const char = jsonText[i];
+                
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+                
+                if (char === '\\' && inString) {
+                    escaped = true;
+                    continue;
+                }
+                
+                if (char === '"' && !escaped) {
+                    inString = !inString;
+                    continue;
+                }
+                
+                if (!inString) {
+                    if (char === '{') {
+                        if (braceCount === 0) {
+                            start = i;
+                        }
+                        braceCount++;
+                    } else if (char === '}') {
+                        braceCount--;
+                        if (braceCount === 0) {
+                            const jsonObject = jsonText.substring(start, i + 1).trim();
+                            try {
+                                JSON.parse(jsonObject);
+                                objects.push(jsonObject);
+                            } catch (e) {
+                                // Skip invalid JSON
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (objects.length > 1) {
+                showMessage(`Detected ${objects.length} concatenated JSON objects. Converting to array format...`, 'success');
+                return '[' + objects.join(',') + ']';
+            }
+            
+            // Original cleanup logic for single JSON objects
+            let lastCompleteEnd = -1;
+            braceCount = 0;
+            
+            for (let i = 0; i < jsonText.length; i++) {
+                if (jsonText[i] === '{') {
+                    braceCount++;
+                } else if (jsonText[i] === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                        lastCompleteEnd = i;
+                        break; // Stop at first complete object
+                    }
+                }
+            }
+            
+            if (lastCompleteEnd > -1 && lastCompleteEnd < jsonText.length - 1) {
+                const afterJSON = jsonText.substring(lastCompleteEnd + 1).trim();
+                if (afterJSON) {
+                    showMessage(`Found extra content after JSON. Removing: "${afterJSON.substring(0, 50)}..."`, 'success');
+                }
+                jsonText = jsonText.substring(0, lastCompleteEnd + 1);
+            }
+            
+            // Remove trailing commas before closing brackets/braces
+            jsonText = jsonText.replace(/,(\s*[}\]])/g, '$1');
+            
+            return jsonText.trim();
+        }
+
+        function handleMultipleJSONFormats(jsonText, inputFormat) {
+            if (inputFormat === 'ndjson' || inputFormat === 'auto') {
+                // Handle line-delimited JSON
+                const lines = jsonText.trim().split('\n');
+                const validObjects = [];
+                
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine) {
+                        try {
+                            const parsed = JSON.parse(trimmedLine);
+                            validObjects.push(parsed);
+                        } catch (e) {
+                            // If not NDJSON, continue to try other formats
+                            if (inputFormat === 'ndjson') {
+                                throw new Error(`Invalid NDJSON at line: ${trimmedLine.substring(0, 50)}...`);
+                            }
+                        }
+                    }
+                }
+                
+                if (validObjects.length > 1) {
+                    showMessage(`Processed ${validObjects.length} NDJSON objects`, 'success');
+                    return JSON.stringify(validObjects);
+                }
+            }
+            
+            if (inputFormat === 'multiple' || inputFormat === 'auto') {
+                // Handle concatenated JSON objects
+                const objects = [];
+                let braceCount = 0;
+                let start = 0;
+                let inString = false;
+                let escaped = false;
+                
+                for (let i = 0; i < jsonText.length; i++) {
+                    const char = jsonText[i];
+                    
+                    if (escaped) {
+                        escaped = false;
+                        continue;
+                    }
+                    
+                    if (char === '\\' && inString) {
+                        escaped = true;
+                        continue;
+                    }
+                    
+                    if (char === '"' && !escaped) {
+                        inString = !inString;
+                        continue;
+                    }
+                    
+                    if (!inString) {
+                        if (char === '{') {
+                            if (braceCount === 0) {
+                                start = i;
+                            }
+                            braceCount++;
+                        } else if (char === '}') {
+                            braceCount--;
+                            if (braceCount === 0) {
+                                const jsonObject = jsonText.substring(start, i + 1).trim();
+                                try {
+                                    const parsed = JSON.parse(jsonObject);
+                                    objects.push(parsed);
+                                } catch (e) {
+                                    if (inputFormat === 'multiple') {
+                                        throw new Error(`Invalid JSON object: ${jsonObject.substring(0, 50)}...`);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (objects.length > 1) {
+                    showMessage(`Processed ${objects.length} concatenated JSON objects`, 'success');
+                    return JSON.stringify(objects);
+                }
+            }
+            
+            // Fall back to single JSON processing
+            return fixCommonJSONIssues(jsonText);
+        }
+
+        function validateAndDisplayJSON(text) {
+            try {
+                const parsed = JSON.parse(text);
+                showMessage('JSON is valid!', 'success');
+                return parsed;
+            } catch (error) {
+                const lines = text.split('\n');
+                const errorMatch = error.message.match(/position (\d+)/);
+                if (errorMatch) {
+                    const position = parseInt(errorMatch[1]);
+                    const beforeError = text.substring(Math.max(0, position - 50), position);
+                    const afterError = text.substring(position, Math.min(text.length, position + 50));
+                    showMessage(`JSON Error at position ${position}:\nBefore: "${beforeError}"\nAfter: "${afterError}"\nError: ${error.message}`, 'error');
+                } else {
+                    showMessage(`JSON Parse Error: ${error.message}`, 'error');
+                }
+                throw error;
+            }
+        }
+
+        // File upload and drag & drop functionality
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const jsonTextarea = document.getElementById('jsonTextarea');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    jsonTextarea.value = e.target.result;
+                    showMessage('File loaded successfully!', 'success');
+                };
+                reader.readAsText(file);
+            } else {
+                showMessage('Please select a valid JSON file.', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            
+            errorDiv.innerHTML = '';
+            successDiv.innerHTML = '';
+            
+            if (type === 'error') {
+                errorDiv.innerHTML = `<div class="error-message">${message}</div>`;
+            } else {
+                successDiv.innerHTML = `<div class="success-message">${message}</div>`;
+            }
+            
+            setTimeout(() => {
+                errorDiv.innerHTML = '';
+                successDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function convertToCSV() {
+            let jsonText = jsonTextarea.value.trim();
+            const inputFormat = document.getElementById('inputFormat').value;
+            const outputFormat = document.getElementById('outputFormat').value;
+            
+            if (!jsonText) {
+                showMessage('Please provide JSON data to convert.', 'error');
+                return;
+            }
+
+            // Handle different input formats
+            if (inputFormat !== 'single') {
+                jsonText = handleMultipleJSONFormats(jsonText, inputFormat);
+            } else {
+                jsonText = fixCommonJSONIssues(jsonText);
+            }
+
+            try {
+                jsonData = validateAndDisplayJSON(jsonText);
+                
+                let csvRows = [];
+                let headers = [];
+                
+                switch (outputFormat) {
+                    case 'campaigns':
+                        ({ headers, rows: csvRows } = convertCampaigns(jsonData));
+                        break;
+                    case 'adgroups':
+                        ({ headers, rows: csvRows } = convertAdGroups(jsonData));
+                        break;
+                    case 'ads':
+                        ({ headers, rows: csvRows } = convertAds(jsonData));
+                        break;
+                    default: // flattened
+                        ({ headers, rows: csvRows } = convertFlattened(jsonData));
+                }
+
+                if (csvRows.length === 0) {
+                    showMessage('No data found to convert.', 'error');
+                    return;
+                }
+
+                // Create CSV string
+                csvData = [headers.join(','), ...csvRows.map(row => 
+                    row.map(cell => {
+                        // Escape commas and quotes in CSV
+                        const cellStr = String(cell || '');
+                        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                            return `"${cellStr.replace(/"/g, '""')}"`;
+                        }
+                        return cellStr;
+                    }).join(',')
+                )].join('\n');
+
+                displayPreview(headers, csvRows);
+                updateStats(jsonData, csvRows.length);
+                
+                document.getElementById('downloadBtn').disabled = false;
+                showMessage(`Successfully converted to CSV! ${csvRows.length} rows generated.`, 'success');
+                
+            } catch (error) {
+                showMessage(`Error parsing JSON: ${error.message}`, 'error');
+            }
+        }
+
+        function convertCampaigns(data) {
+            // Handle both single object with campaigns array and array of objects with campaigns
+            let campaigns = [];
+            if (Array.isArray(data)) {
+                // NDJSON format: array of objects, each with campaigns
+                data.forEach(item => {
+                    if (item.campaigns && Array.isArray(item.campaigns)) {
+                        campaigns = campaigns.concat(item.campaigns);
+                    }
+                });
+            } else if (data.campaigns && Array.isArray(data.campaigns)) {
+                // Single object format
+                campaigns = data.campaigns;
+            }
+            
+            const headers = [
+                'campaignId', 'name', 'campaignType', 'targetingType', 
+                'dailyBudget', 'totalBudget', 'startDate', 'endDate', 
+                'state', 'defaultBid', 'automaticBidDesiredAcos'
+            ];
+            
+            const rows = campaigns.map(campaign => [
+                campaign.campaignId,
+                campaign.name,
+                campaign.campaignType,
+                campaign.targetingType,
+                campaign.dailyBudget,
+                campaign.totalBudget,
+                campaign.startDate,
+                campaign.endDate,
+                campaign.state,
+                campaign.defaultBid,
+                campaign.automaticBidDesiredAcos
+            ]);
+            
+            return { headers, rows };
+        }
+
+        function convertAdGroups(data) {
+            // Handle both single object with campaigns array and array of objects with campaigns
+            let campaigns = [];
+            if (Array.isArray(data)) {
+                // NDJSON format: array of objects, each with campaigns
+                data.forEach(item => {
+                    if (item.campaigns && Array.isArray(item.campaigns)) {
+                        campaigns = campaigns.concat(item.campaigns);
+                    }
+                });
+            } else if (data.campaigns && Array.isArray(data.campaigns)) {
+                // Single object format
+                campaigns = data.campaigns;
+            }
+            
+            const headers = [
+                'campaignId', 'campaignName', 'adGroupId', 'adGroupName', 
+                'defaultBid', 'state'
+            ];
+            
+            const rows = [];
+            campaigns.forEach(campaign => {
+                const adGroups = campaign.adGroups || [];
+                adGroups.forEach(adGroup => {
+                    rows.push([
+                        campaign.campaignId,
+                        campaign.name,
+                        adGroup.adGroupId,
+                        adGroup.name,
+                        adGroup.defaultBid,
+                        adGroup.state
+                    ]);
+                });
+            });
+            
+            return { headers, rows };
+        }
+
+        function convertAds(data) {
+            // Handle both single object with campaigns array and array of objects with campaigns
+            let campaigns = [];
+            if (Array.isArray(data)) {
+                // NDJSON format: array of objects, each with campaigns
+                data.forEach(item => {
+                    if (item.campaigns && Array.isArray(item.campaigns)) {
+                        campaigns = campaigns.concat(item.campaigns);
+                    }
+                });
+            } else if (data.campaigns && Array.isArray(data.campaigns)) {
+                // Single object format
+                campaigns = data.campaigns;
+            }
+            
+            const headers = [
+                'campaignId', 'campaignName', 'adGroupId', 'adGroupName',
+                'adId', 'sku', 'state', 'bid'
+            ];
+            
+            const rows = [];
+            campaigns.forEach(campaign => {
+                const adGroups = campaign.adGroups || [];
+                adGroups.forEach(adGroup => {
+                    const ads = adGroup.ads || [];
+                    ads.forEach(ad => {
+                        rows.push([
+                            campaign.campaignId,
+                            campaign.name,
+                            adGroup.adGroupId,
+                            adGroup.name,
+                            ad.adId,
+                            ad.sku,
+                            ad.state,
+                            ad.bid
+                        ]);
+                    });
+                });
+            });
+            
+            return { headers, rows };
+        }
+
+        function convertFlattened(data) {
+            // Handle both single object with campaigns array and array of objects with campaigns
+            let campaigns = [];
+            if (Array.isArray(data)) {
+                // NDJSON format: array of objects, each with campaigns
+                data.forEach(item => {
+                    if (item.campaigns && Array.isArray(item.campaigns)) {
+                        campaigns = campaigns.concat(item.campaigns);
+                    }
+                });
+            } else if (data.campaigns && Array.isArray(data.campaigns)) {
+                // Single object format
+                campaigns = data.campaigns;
+            }
+            
+            const headers = [
+                'campaignId', 'campaignName', 'campaignType', 'targetingType',
+                'dailyBudget', 'totalBudget', 'startDate', 'endDate', 'campaignState',
+                'adGroupId', 'adGroupName', 'adGroupDefaultBid', 'adGroupState',
+                'adId', 'sku', 'adState', 'adBid'
+            ];
+            
+            const rows = [];
+            campaigns.forEach(campaign => {
+                const adGroups = campaign.adGroups || [];
+                adGroups.forEach(adGroup => {
+                    const ads = adGroup.ads || [];
+                    ads.forEach(ad => {
+                        rows.push([
+                            campaign.campaignId,
+                            campaign.name,
+                            campaign.campaignType,
+                            campaign.targetingType,
+                            campaign.dailyBudget,
+                            campaign.totalBudget,
+                            campaign.startDate,
+                            campaign.endDate,
+                            campaign.state,
+                            adGroup.adGroupId,
+                            adGroup.name,
+                            adGroup.defaultBid,
+                            adGroup.state,
+                            ad.adId,
+                            ad.sku,
+                            ad.state,
+                            ad.bid
+                        ]);
+                    });
+                });
+            });
+            
+            return { headers, rows };
+        }
+
+        function displayPreview(headers, rows) {
+            const outputSection = document.getElementById('outputSection');
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
+            const recordCount = document.getElementById('recordCount');
+
+            // Show only first 100 rows for preview
+            const previewRows = rows.slice(0, 100);
+            
+            // Create header
+            tableHeader.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+            
+            // Create body
+            tableBody.innerHTML = previewRows.map(row => 
+                `<tr>${row.map(cell => `<td title="${String(cell || '')}">${String(cell || '')}</td>`).join('')}</tr>`
+            ).join('');
+            
+            recordCount.textContent = `${rows.length} records${rows.length > 100 ? ' (showing first 100)' : ''}`;
+            outputSection.style.display = 'block';
+        }
+
+        function updateStats(data, rowCount) {
+            // Handle both single object with campaigns array and array of objects with campaigns
+            let campaigns = [];
+            if (Array.isArray(data)) {
+                // NDJSON format: array of objects, each with campaigns
+                data.forEach(item => {
+                    if (item.campaigns && Array.isArray(item.campaigns)) {
+                        campaigns = campaigns.concat(item.campaigns);
+                    }
+                });
+            } else if (data.campaigns && Array.isArray(data.campaigns)) {
+                // Single object format
+                campaigns = data.campaigns;
+            }
+            
+            let adGroupCount = 0;
+            let adCount = 0;
+            
+            campaigns.forEach(campaign => {
+                const adGroups = campaign.adGroups || [];
+                adGroupCount += adGroups.length;
+                adGroups.forEach(adGroup => {
+                    const ads = adGroup.ads || [];
+                    adCount += ads.length;
+                });
+            });
+            
+            document.getElementById('campaignCount').textContent = campaigns.length;
+            document.getElementById('adGroupCount').textContent = adGroupCount;
+            document.getElementById('adCount').textContent = adCount;
+            document.getElementById('rowCount').textContent = rowCount;
+            document.getElementById('statsSection').style.display = 'block';
+        }
+
+        function downloadCSV() {
+            if (!csvData) {
+                showMessage('No CSV data to download. Please convert first.', 'error');
+                return;
+            }
+
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `converted_data_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('CSV file downloaded successfully!', 'success');
+        }
+
+        function clearData() {
+            jsonTextarea.value = '';
+            csvData = '';
+            jsonData = null;
+            document.getElementById('outputSection').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'none';
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('errorMessage').innerHTML = '';
+            document.getElementById('successMessage').innerHTML = '';
+            showMessage('Data cleared successfully!', 'success');
+        }
+
+        function fixJSON() {
+            const jsonText = jsonTextarea.value.trim();
+            if (!jsonText) {
+                showMessage('Please provide JSON data to fix.', 'error');
+                return;
+            }
+
+            try {
+                const fixedJSON = fixCommonJSONIssues(jsonText);
+                jsonTextarea.value = fixedJSON;
+                
+                // Try to parse the fixed JSON
+                JSON.parse(fixedJSON);
+                showMessage('JSON has been automatically fixed and is now valid!', 'success');
+            } catch (error) {
+                showMessage(`Could not automatically fix JSON. Error: ${error.message}`, 'error');
+                analyzeJSONError(jsonText);
+            }
+        }
+
+        function analyzeJSONError(jsonText) {
+            try {
+                JSON.parse(jsonText);
+            } catch (error) {
+                const errorMatch = error.message.match(/position (\d+)/);
+                if (errorMatch) {
+                    const position = parseInt(errorMatch[1]);
+                    const start = Math.max(0, position - 100);
+                    const end = Math.min(jsonText.length, position + 100);
+                    
+                    const contextBefore = jsonText.substring(start, position);
+                    const errorChar = jsonText.charAt(position);
+                    const contextAfter = jsonText.substring(position + 1, end);
+                    
+                    console.log('JSON Error Analysis:');
+                    console.log('Position:', position);
+                    console.log('Character at error:', JSON.stringify(errorChar));
+                    console.log('Context before:', JSON.stringify(contextBefore.slice(-50)));
+                    console.log('Context after:', JSON.stringify(contextAfter.slice(0, 50)));
+                    
+                    // Try to find the end of valid JSON
+                    let braceCount = 0;
+                    let lastValidEnd = -1;
+                    
+                    for (let i = 0; i < jsonText.length; i++) {
+                        const char = jsonText[i];
+                        if (char === '{') braceCount++;
+                        else if (char === '}') {
+                            braceCount--;
+                            if (braceCount === 0) {
+                                lastValidEnd = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (lastValidEnd > -1 && lastValidEnd < position) {
+                        const validJSON = jsonText.substring(0, lastValidEnd + 1);
+                        const extraContent = jsonText.substring(lastValidEnd + 1);
+                        
+                        showMessage(`Found valid JSON ending at position ${lastValidEnd}. Extra content found: "${extraContent.substring(0, 100)}..."`, 'error');
+                        
+                        if (confirm('Would you like to remove the extra content and keep only the valid JSON?')) {
+                            jsonTextarea.value = validJSON;
+                            showMessage('Extra content removed. Try converting again.', 'success');
+                        }
+                    }
+                }
+            }
+        }
+
+        // Load sample data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // You can uncomment this to auto-load your sample data
+            // jsonTextarea.value = JSON.stringify(your_sample_data, null, 2);
+        });
+    </script>
+</body>
+</html>

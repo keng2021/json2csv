@@ -1,0 +1,7 @@
+# Data files - exclude from version control
+data/
+*.json
+*.csv
+
+# Generated files
+CLAUDE.md
